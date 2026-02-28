@@ -1,383 +1,59 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>iPhone Hand Tracking AR</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            width: 100%;
-            height: 100vh;
-            overflow: hidden;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #000;
-        }
-
-        #video {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            z-index: 1;
-        }
-
-        #output {
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 2;
-            width: 100%;
-            height: 100%;
-        }
-
-        #status {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(0, 0, 0, 0.7);
-            color: #fff;
-            padding: 15px 25px;
-            border-radius: 10px;
-            font-size: 14px;
-            z-index: 10;
-            font-weight: 500;
-            min-width: 250px;
-        }
-
-        #status.loading {
-            background: rgba(33, 150, 243, 0.9);
-        }
-
-        #status.error {
-            background: rgba(244, 67, 54, 0.9);
-        }
-
-        #status.success {
-            background: rgba(76, 175, 80, 0.9);
-        }
-
-        .spinner {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: #fff;
-            animation: spin 0.8s linear infinite;
-            margin-right: 8px;
-            vertical-align: middle;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        #info {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: rgba(0, 0, 0, 0.7);
-            color: #fff;
-            padding: 15px 25px;
-            border-radius: 10px;
-            font-size: 13px;
-            z-index: 10;
-            max-width: 300px;
-            line-height: 1.5;
-        }
-
-        .gesture-indicator {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(0, 0, 0, 0.7);
-            color: #fff;
-            padding: 15px 25px;
-            border-radius: 10px;
-            font-size: 16px;
-            z-index: 10;
-            min-width: 200px;
-            text-align: center;
-        }
-    </style>
+    <title>Landscape AR Menu</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
 </head>
 <body>
-    <video id="video" autoplay playsinline muted></video>
-    <canvas id="output"></canvas>
-    
-    <div id="info">
-        <strong>📱 Hand Tracking AR</strong><br>
-        Zeige deine Hand in die Kamera<br>
-        Berühre Daumen & Zeigefinger um zu klicken
+    <h1>Welcome to the Landscape AR Menu</h1>
+    <div id="menu">
+        <button id="einstellungen">Einstellungen</button>
+        <button id="appStore">App Store</button>
+        <button id="games">Games</button>
+        <button id="standby">Standby</button>
     </div>
-
-    <div class="gesture-indicator" id="gesture">
-        Warte auf Hand...
-    </div>
-    
-    <div id="status" class="loading">
-        <span class="spinner"></span> Lade Modelle...
-    </div>
-
-    <!-- MediaPipe Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
-
     <script>
-        // DOM Elements
-        const videoElement = document.getElementById('video');
-        const canvasElement = document.getElementById('output');
-        const statusEl = document.getElementById('status');
-        const gestureEl = document.getElementById('gesture');
-        const canvasCtx = canvasElement.getContext('2d');
+        // Initialize Three.js scene
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
 
-        // Setup Canvas
-        function resizeCanvas() {
-            canvasElement.width = window.innerWidth;
-            canvasElement.height = window.innerHeight;
-        }
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
+        // MediaPipe Hand Tracking
+        const hands = new Hands({ ... }); // Setup MediaPipe Hands
+        hands.onResults(onResults);
 
-        // Initialize Hands
-        const hands = new Hands({
-            locateFile: (file) => {
-                return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+        function onResults(results) {
+            // Handle results for pinch detection and cursor tracking
+            if (results.multiHandLandmarks) {
+                // Handle hand tracking and cursor overlay logic
             }
+        }
+
+        document.addEventListener('click', function(event) {
+            // Detect click on menu items based on pinch gestures
+            if (event.target.id === 'einstellungen') {
+                // Open Einstellungen
+            } else if (event.target.id === 'appStore') {
+                // Open App Store
+            } // Additional menu items...
         });
 
-        hands.setOptions({
-            maxNumHands: 2,
-            modelComplexity: 1,
-            minDetectionConfidence: 0.7,
-            minTrackingConfidence: 0.5
-        });
-
-        let lastClickTime = 0;
-        const clickCooldown = 200; // ms
-
-        hands.onResults(results => {
-            // Clear canvas
-            canvasCtx.save();
-            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-
-            if (results.image) {
-                canvasCtx.drawImage(
-                    results.image,
-                    0, 0,
-                    canvasElement.width,
-                    canvasElement.height
-                );
+        // Error handling
+        try {
+            // Main rendering loop
+            function animate() {
+                requestAnimationFrame(animate);
+                renderer.render(scene, camera);
             }
-
-            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-                let gestureText = 'Hand erkannt ✋';
-
-                for (let handIdx = 0; handIdx < results.multiHandLandmarks.length; handIdx++) {
-                    const landmarks = results.multiHandLandmarks[handIdx];
-                    const handedness = results.multiHandedness[handIdx];
-
-                    // Key landmarks
-                    const indexTip = landmarks[8];      // Index finger tip
-                    const thumbTip = landmarks[4];      // Thumb tip
-                    const middleTip = landmarks[12];    // Middle finger tip
-                    const ringTip = landmarks[16];      // Ring finger tip
-                    const pinkyTip = landmarks[20];     // Pinky tip
-                    const indexBase = landmarks[5];     // Index finger base
-                    const palmCenter = landmarks[0];    // Palm center
-
-                    // Draw hand landmarks
-                    drawConnectors(
-                        canvasCtx,
-                        landmarks,
-                        Hands.HAND_CONNECTIONS,
-                        { color: '#00FF41', lineWidth: 2 }
-                    );
-
-                    drawLandmarks(canvasCtx, landmarks, { color: '#FF0040', radius: 5 });
-
-                    // Calculate distances
-                    const indexThumbDist = calculateDistance(indexTip, thumbTip);
-                    const fingerSpread = calculateDistance(indexTip, pinkyTip);
-
-                    // Pinch gesture (Click)
-                    if (indexThumbDist < 0.05) {
-                        const now = Date.now();
-                        if (now - lastClickTime > clickCooldown) {
-                            gestureText = '🖱️ KLICK!';
-                            lastClickTime = now;
-                            triggerClick(
-                                indexTip.x * canvasElement.width,
-                                indexTip.y * canvasElement.height
-                            );
-                        }
-                        drawGesture(canvasCtx, indexTip, 30, 'red');
-                    } else {
-                        drawGesture(canvasCtx, indexTip, 20, 'lime');
-                    }
-
-                    // Peace sign (Spread)
-                    if (fingerSpread > 0.4) {
-                        gestureText = '✌️ Peace!';
-                    }
-
-                    // Victory pose
-                    const indexMiddleDist = calculateDistance(indexTip, middleTip);
-                    if (indexMiddleDist < 0.03 && fingerSpread > 0.3) {
-                        gestureText = '🎉 Victory!';
-                    }
-                }
-
-                gestureEl.textContent = gestureText;
-                statusEl.className = 'success';
-                statusEl.innerHTML = '✓ Hand erkannt';
-            } else {
-                gestureEl.textContent = 'Warte auf Hand...';
-                statusEl.className = '';
-                statusEl.textContent = '👁️ Keine Hand erkannt';
-            }
-
-            canvasCtx.restore();
-        });
-
-        // Helper functions
-        function calculateDistance(point1, point2) {
-            const dx = point1.x - point2.x;
-            const dy = point1.y - point2.y;
-            const dz = point1.z - point2.z;
-            return Math.sqrt(dx*dx + dy*dy + dz*dz);
+            animate();
+        } catch (error) {
+            console.error('An error occurred:', error);
         }
-
-        function drawGesture(ctx, point, radius, color) {
-            const x = point.x * canvasElement.width;
-            const y = point.y * canvasElement.height;
-            
-            ctx.beginPath();
-            ctx.arc(x, y, radius, 0, 2 * Math.PI);
-            ctx.strokeStyle = color;
-            ctx.lineWidth = 3;
-            ctx.stroke();
-            
-            ctx.fillStyle = color;
-            ctx.globalAlpha = 0.2;
-            ctx.fill();
-            ctx.globalAlpha = 1.0;
-        }
-
-        function drawConnectors(ctx, landmarks, connections, config) {
-            const { color = '#fff', lineWidth = 5 } = config;
-            ctx.strokeStyle = color;
-            ctx.lineWidth = lineWidth;
-            
-            for (const connection of connections) {
-                const from = landmarks[connection.start];
-                const to = landmarks[connection.end];
-                
-                ctx.beginPath();
-                ctx.moveTo(from.x * canvasElement.width, from.y * canvasElement.height);
-                ctx.lineTo(to.x * canvasElement.width, to.y * canvasElement.height);
-                ctx.stroke();
-            }
-        }
-
-        function drawLandmarks(ctx, landmarks, config) {
-            const { color = '#fff', radius = 5 } = config;
-            ctx.fillStyle = color;
-            
-            for (const landmark of landmarks) {
-                ctx.beginPath();
-                ctx.arc(
-                    landmark.x * canvasElement.width,
-                    landmark.y * canvasElement.height,
-                    radius,
-                    0,
-                    2 * Math.PI
-                );
-                ctx.fill();
-            }
-        }
-
-        function triggerClick(x, y) {
-            // Erstelle visuelles Feedback
-            const event = new MouseEvent('click', {
-                bubbles: true,
-                cancelable: true,
-                view: window,
-                clientX: x,
-                clientY: y
-            });
-            
-            const element = document.elementFromPoint(x, y);
-            if (element) {
-                element.dispatchEvent(event);
-            }
-
-            // Audio feedback
-            playClickSound();
-        }
-
-        function playClickSound() {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
-            oscillator.frequency.value = 800;
-            oscillator.type = 'sine';
-            
-            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-            
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.1);
-        }
-
-        // Initialize Camera
-        async function initCamera() {
-            try {
-                statusEl.className = 'loading';
-                statusEl.innerHTML = '<span class="spinner"></span> Starte Kamera...';
-
-                const camera = new Camera(videoElement, {
-                    onFrame: async () => {
-                        await hands.send({ image: videoElement });
-                    },
-                    width: 1280,
-                    height: 720
-                });
-
-                await camera.start();
-                
-                statusEl.className = 'success';
-                statusEl.textContent = '✓ Bereit!';
-                setTimeout(() => {
-                    statusEl.style.opacity = '0.7';
-                }, 2000);
-
-            } catch (error) {
-                console.error('Fehler:', error);
-                statusEl.className = 'error';
-                statusEl.textContent = '❌ Kamera nicht verfügbar. Bitte Berechtigung erteilen.';
-                
-                // Fallback message
-                const infoEl = document.getElementById('info');
-                infoEl.innerHTML = '<strong>⚠️ Fehler</strong><br>' + error.message;
-            }
-        }
-
-        // Start everything
-        initCamera();
     </script>
 </body>
 </html>
