@@ -3,17 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Landscape AR Menu</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <title>AR Menu</title>
+    <script src="https://threejs.org/build/three.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+        #menu { position: absolute; top: 10px; left: 10px; visibility: hidden; }
+    </style>
 </head>
 <body>
-    <h1>Welcome to the Landscape AR Menu</h1>
     <div id="menu">
-        <button id="einstellungen">Einstellungen</button>
-        <button id="appStore">App Store</button>
-        <button id="games">Games</button>
-        <button id="standby">Standby</button>
+        <button onclick="selectItem('Item1')">Item 1</button>
+        <button onclick="selectItem('Item2')">Item 2</button>
     </div>
     <script>
         // Initialize Three.js scene
@@ -22,38 +24,57 @@
         const renderer = new THREE.WebGLRenderer();
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
+        
+        // Hand tracking with MediaPipe
+        const hands = new Hands({ locateFile: (file) => {
+          return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+        }});
+        hands.onResults(onHandResults);
 
-        // MediaPipe Hand Tracking
-        const hands = new Hands({ ... }); // Setup MediaPipe Hands
-        hands.onResults(onResults);
+        const cameraElement = document.createElement('video');
+        cameraElement.autoplay = true;
+        document.body.appendChild(cameraElement);
 
-        function onResults(results) {
-            // Handle results for pinch detection and cursor tracking
-            if (results.multiHandLandmarks) {
-                // Handle hand tracking and cursor overlay logic
-            }
-        }
-
-        document.addEventListener('click', function(event) {
-            // Detect click on menu items based on pinch gestures
-            if (event.target.id === 'einstellungen') {
-                // Open Einstellungen
-            } else if (event.target.id === 'appStore') {
-                // Open App Store
-            } // Additional menu items...
+        navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+            cameraElement.srcObject = stream;
+            detectHands();
         });
 
-        // Error handling
-        try {
-            // Main rendering loop
-            function animate() {
-                requestAnimationFrame(animate);
-                renderer.render(scene, camera);
-            }
-            animate();
-        } catch (error) {
-            console.error('An error occurred:', error);
+        function detectHands() {
+            hands.send({ image: cameraElement });
+            requestAnimationFrame(detectHands);
         }
+
+        function onHandResults(results) {
+            if (results.multiHandLandmarks) {
+                showMenu(results.multiHandLandmarks);
+            }
+        }
+
+        function showMenu(landmarks) {
+            // Update visibility based on hand detection logic
+            document.getElementById('menu').style.visibility = 'visible';
+        }
+
+        function selectItem(item) {
+            console.log(item + ' selected');
+        }
+
+        function onPinchGesture() {
+            // Handle pinch gesture detection
+        }
+
+        // Error handling
+        window.onerror = function(message) {
+            console.error('Error occurred: ', message);
+        };
+
+        camera.position.z = 5;
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+        animate();
     </script>
 </body>
 </html>
