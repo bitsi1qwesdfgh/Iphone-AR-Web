@@ -5,8 +5,7 @@
 <meta name="viewport"
 content="width=device-width, initial-scale=1.0,
 maximum-scale=1.0, user-scalable=no">
-<title>AR Landscape Mode</title>
-
+<title>AR VR Mode</title>
 <style>
 html,body{
   margin:0;
@@ -14,11 +13,9 @@ html,body{
   background:black;
   font-family:sans-serif;
 }
-
-/* Landscape UI Layout */
 #menu{
   position:absolute;
-  left:30px;
+  left:40px;
   top:50%;
   transform:translateY(-50%);
   display:flex;
@@ -26,25 +23,22 @@ html,body{
   gap:20px;
   background:rgba(0,0,0,0.35);
   padding:20px;
-  border-radius:18px;
+  border-radius:20px;
   backdrop-filter:blur(15px);
 }
-
 .menuItem{
-  padding:18px 26px;
-  font-size:20px;
-  border-radius:14px;
+  padding:18px 28px;
+  font-size:22px;
+  border-radius:15px;
   background:rgba(255,255,255,0.15);
   color:white;
   transition:0.2s;
 }
-
 .menuItem.hover{
   background:lime;
   color:black;
   transform:scale(1.08);
 }
-
 .menuItem.active{
   background:lime;
   color:black;
@@ -69,7 +63,7 @@ html,body{
 // ---------- THREE ----------
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(
-  75,
+  90, // breiter für VR Feeling
   window.innerWidth/window.innerHeight,
   0.1,
   1000
@@ -78,9 +72,10 @@ camera.position.z = 6;
 
 const renderer = new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(window.innerWidth,window.innerHeight);
+renderer.setScissorTest(true);
 document.body.appendChild(renderer.domElement);
 
-// Sky Gradient (Landscape optimiert)
+// Sky Gradient
 const skyGeo = new THREE.SphereGeometry(100,32,32);
 const skyMat = new THREE.ShaderMaterial({
   side:THREE.BackSide,
@@ -108,25 +103,34 @@ const skyMat = new THREE.ShaderMaterial({
   `
 });
 scene.add(new THREE.Mesh(skyGeo,skyMat));
-
-// Light
 scene.add(new THREE.AmbientLight(0xffffff,1));
 
-// Fake Cursor (besser sichtbar im Landscape)
+// Fake Cursor
 const cursor = new THREE.Mesh(
-  new THREE.SphereGeometry(0.25,20,20),
+  new THREE.SphereGeometry(0.3,20,20),
   new THREE.MeshStandardMaterial({color:0xff4444})
 );
 scene.add(cursor);
 
-// Render Loop
-function animate(){
-  requestAnimationFrame(animate);
+// ---------- VR SPLIT RENDER ----------
+function render(){
+  requestAnimationFrame(render);
+
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+
+  // LEFT EYE
+  renderer.setViewport(0,0,w/2,h);
+  renderer.setScissor(0,0,w/2,h);
+  renderer.render(scene,camera);
+
+  // RIGHT EYE
+  renderer.setViewport(w/2,0,w/2,h);
+  renderer.setScissor(w/2,0,w/2,h);
   renderer.render(scene,camera);
 }
-animate();
+render();
 
-// Resize fix
 window.addEventListener("resize",()=>{
   camera.aspect=window.innerWidth/window.innerHeight;
   camera.updateProjectionMatrix();
@@ -153,7 +157,6 @@ hands.onResults(results=>{
     const index=l[8];
     const thumb=l[4];
 
-    // Landscape scaling
     cursor.position.x=(index.x-0.5)*8;
     cursor.position.y=-(index.y-0.5)*4;
 
@@ -172,7 +175,7 @@ hands.onResults(results=>{
         screenY-(r.top+r.height/2)
       );
 
-      if(dist<90){
+      if(dist<100){
         btn.classList.add("hover");
         if(pinchDist<0.05){
           btn.classList.add("active");
@@ -185,10 +188,14 @@ hands.onResults(results=>{
   }
 });
 
-// Camera start
+// ---------- ULTRA WIDE CAMERA ----------
 async function start(){
   const stream=await navigator.mediaDevices.getUserMedia({
-    video:{facingMode:"environment"}
+    video:{
+      facingMode:"environment",
+      width:{ideal:1920},
+      height:{ideal:1080}
+    }
   });
   video.srcObject=stream;
   await video.play();
